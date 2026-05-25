@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Файловая система NTFS — презентация</title>
+
+  <!-- Reveal.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <style>
+    /* =========================================================
+       Design tokens
+       ========================================================= */
+    :root {
+      --bg: #f7f7f4;
+      --bg-soft: #ffffff;
+      --panel: #ffffff;
+      --ink: #0f172a;
+      --ink-2: #1e293b;
+      --muted: #64748b;
+      --line: #e6e8ee;
+      --line-strong: #d6dae3;
+
+      --accent: #4f46e5;
+      --accent-soft: #eef2ff;
+      --accent-ink: #3730a3;
+
+      --amber: #f59e0b;
+      --amber-soft: #fff7e6;
+      --rose: #ef4444;
+      --rose-soft: #fff0f0;
+      --emerald: #10b981;
+      --emerald-soft: #ecfdf5;
+      --sky: #0ea5e9;
+      --sky-soft: #ecfeff;
+      --violet: #8b5cf6;
+      --violet-soft: #f5f3ff;
+
+      --radius: 20px;
+      --radius-sm: 14px;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 6px 24px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    html,
+    body {
+      background: var(--bg);
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .reveal {
+      font-family: "Inter", sans-serif;
+      color: var(--ink);
+      font-size: 30px;
+    }
+
+    .reveal .slides {
+      text-align: left;
+    }
+
+    .reveal .slide-background {
+      background:
+        radial-gradient(1100px 600px at 8% -10%, rgba(79, 70, 229, 0.06), transparent 60%),
+        radial-gradient(900px 500px at 100% 110%, rgba(14, 165, 233, 0.05), transparent 60%),
+        linear-gradient(180deg, #fafaf7 0%, #f5f5f1 100%);
+    }
+
+    .reveal h1,
+    .reveal h2,
+    .reveal h3,
+    .reveal h4 {
+      font-family: "Space Grotesk", "Inter", sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.08;
+      margin: 0;
+      text-transform: none;
+      color: var(--ink);
+    }
+
+    .reveal h1 {
+      font-size: 2.6em;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.2em;
+    }
+
+    .reveal h2 {
+      font-size: 1.55em;
+      margin-bottom: 0.4em;
+    }
+
+    .reveal h3 {
+      font-size: 0.92em;
+      margin-bottom: 0.3em;
+      letter-spacing: -0.01em;
+    }
+
+    .reveal p,
+    .reveal li,
+    .reveal td,
+    .reveal th {
+      font-size: 0.62em;
+      line-height: 1.45;
+      color: var(--ink-2);
+    }
+
+    .reveal .lead {
+      font-size: 0.74em;
+      line-height: 1.5;
+      color: var(--ink-2);
+    }
+
+    .reveal .small {
+      font-size: 0.55em;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+
+    .reveal strong {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .reveal ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .reveal li {
+      margin: 0 0 0.45em 0;
+      padding-left: 1.1em;
+      position: relative;
+    }
+
+    .reveal li::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+      position: absolute;
+      left: 0;
+      top: 0.62em;
+    }
+
+    .reveal table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .reveal th,
+    .reveal td {
+      padding: 0.7em 0.9em;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.6em;
+    }
+
+    .reveal tr:last-child td {
+      border-bottom: none;
+    }
+
+    .reveal th + th,
+    .reveal td + td {
+      border-left: 1px solid var(--line);
+    }
+
+    .reveal th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: var(--ink);
+      text-align: left;
+      font-size: 0.58em;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* =========================================================
+       Slide shell
+       ========================================================= */
+    .slide-shell {
+      min-height: 760px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      padding: 4px 4px 0;
+    }
+
+    .slide-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 2px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.46em;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .kicker i {
+      font-size: 0.85em;
+    }
+
+    .page-chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.42em;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 22px;
+    }
+
+    .card-elevated {
+      box-shadow: var(--shadow-md);
+    }
+
+    .tinted {
+      border: 1px solid transparent;
+    }
+
+    .tinted.amber  { background: var(--amber-soft);   border-color: #fde6b8; }
+    .tinted.rose   { background: var(--rose-soft);    border-color: #fbd0d0; }
+    .tinted.emerald{ background: var(--emerald-soft); border-color: #bbf0d6; }
+    .tinted.sky    { background: var(--sky-soft);     border-color: #b7eaf3; }
+    .tinted.violet { background: var(--violet-soft);  border-color: #ddd2f9; }
+    .tinted.indigo { background: var(--accent-soft);  border-color: #d8def6; }
+
+    .icon-badge {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.6em;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .icon-badge.amber   { background: var(--amber); }
+    .icon-badge.rose    { background: var(--rose); }
+    .icon-badge.emerald { background: var(--emerald); }
+    .icon-badge.sky     { background: var(--sky); }
+    .icon-badge.violet  { background: var(--violet); }
+
+    .dim {
+      color: var(--muted);
+      font-size: 0.6em;
+      line-height: 1.5;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.5em;
+      color: var(--ink-2);
+    }
+
+    .pill i {
+      color: var(--accent);
+      font-size: 0.9em;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .four-col {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .span-3  { grid-column: span 3; }
+    .span-4  { grid-column: span 4; }
+    .span-5  { grid-column: span 5; }
+    .span-6  { grid-column: span 6; }
+    .span-7  { grid-column: span 7; }
+    .span-8  { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .metric-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 140px;
+    }
+
+    .metric-label {
+      font-size: 0.46em;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .metric-value {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.78em;
+      line-height: 1.2;
+      font-weight: 600;
+      margin-top: 10px;
+      color: var(--ink);
+    }
+
+    /* =========================================================
+       Title slide
+       ========================================================= */
+    .title-slide {
+      min-height: 760px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 36px;
+      padding: 20px 30px;
+    }
+
+    .title-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.5em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+
+    .title-tag::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .title-heading {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 0.98;
+      font-size: 3.2em;
+      color: var(--ink);
+      max-width: 18ch;
+    }
+
+    .title-heading .accent-word {
+      background: linear-gradient(120deg, var(--accent) 0%, var(--sky) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .title-divider {
+      width: 64px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--sky));
+    }
+
+    .credits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 980px;
+    }
+
+    .credit-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .credit-label {
+      font-size: 0.42em;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .credit-value {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.7em;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+
+    /* =========================================================
+       Flow / steps
+       ========================================================= */
+    .flow-line {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .flow-line.four {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .step-card {
+      position: relative;
+      min-height: 150px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .step-card::after {
+      content: "→";
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.7em;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 0 4px;
+      z-index: 1;
+    }
+
+    .flow-line .step-card:last-child::after,
+    .flow-line.four .step-card:last-child::after {
+      display: none;
+    }
+
+    .step-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.5em;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 0.65em;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+
+    .compare-note {
+      margin-top: 4px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .compare-note.two {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mini-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mini-card h3 {
+      font-size: 0.66em;
+      margin-bottom: 4px;
+    }
+
+    .mini-card h3 i {
+      color: var(--accent);
+      margin-right: 6px;
+      font-size: 0.85em;
+    }
+
+    /* =========================================================
+       Catalog / tree
+       ========================================================= */
+    .catalog-visual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .tree-box {
+      font-family: "JetBrains Mono", "Menlo", monospace;
+      background: #0f172a;
+      color: #e2e8f0;
+      border: 1px solid #1e293b;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      padding: 22px 24px;
+      font-size: 0.56em;
+      line-height: 1.7;
+    }
+
+    .tree-box .tree-line strong {
+      color: #a5b4fc;
+    }
+
+    .tree-box .arrow {
+      color: #64748b;
+    }
+
+    .tree-line {
+      display: block;
+    }
+
+    /* =========================================================
+       Misc components
+       ========================================================= */
+    .highlight-strip {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      background: var(--panel);
+      box-shadow: var(--shadow-sm);
+      font-size: 0.62em;
+      line-height: 1.45;
+    }
+
+    .highlight-strip i {
+      color: var(--accent);
+      font-size: 1.1em;
+    }
+
+    .footer-tag {
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.46em;
+      font-weight: 600;
+    }
+
+    .footer-tag i {
+      color: var(--accent);
+    }
+
+    .systems-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .system-file {
+      min-height: 140px;
+    }
+
+    .system-file h3 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.78em;
+      margin-bottom: 6px;
+      color: var(--accent-ink);
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .timeline-track {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .timeline-node {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 18px 16px 50px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-node::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: 22px;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .timeline-node h3 {
+      font-size: 0.7em;
+      margin-bottom: 4px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .key-number {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 1.4em;
+      line-height: 1;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .final-note {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .big-quote {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.96em;
+      line-height: 1.2;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .tiny {
+      font-size: 0.46em;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    code {
+      font-family: "JetBrains Mono", "Menlo", monospace;
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: 0.92em;
+    }
+
+    /* =========================================================
+       Thank you slide
+       ========================================================= */
+    .thanks-slide {
+      min-height: 760px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .thanks-mark {
+      width: 96px;
+      height: 96px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, var(--accent), var(--sky));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.6em;
+      box-shadow: 0 18px 40px rgba(79, 70, 229, 0.25);
+    }
+
+    .thanks-title {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      font-size: 3.4em;
+      letter-spacing: -0.035em;
+      line-height: 1;
+      background: linear-gradient(120deg, var(--accent) 0%, var(--sky) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .thanks-sub {
+      font-size: 0.75em;
+      color: var(--muted);
+      max-width: 26ch;
+      line-height: 1.4;
+    }
+
+    .thanks-divider {
+      width: 72px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--sky));
+    }
+
+    @media (max-width: 1200px) {
+      .two-col,
+      .catalog-visual,
+      .summary-grid,
+      .final-note,
+      .timeline {
+        grid-template-columns: 1fr;
+      }
+
+      .credits-grid,
+      .three-col,
+      .systems-grid,
+      .four-col,
+      .flow-line,
+      .flow-line.four {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .bento-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      .span-8,
+      .span-7,
+      .span-6,
+      .span-5,
+      .span-4,
+      .span-3 {
+        grid-column: span 6;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- =====================================================
+           Slide 1: Title
+           ===================================================== -->
+      <section>
+        <div class="title-slide">
+          <div class="title-tag">Презентация</div>
+          <div>
+            <h1 class="title-heading">
+              Файловая система <span class="accent-word">NTFS</span>
+            </h1>
+            <div class="title-divider" style="margin-top:24px;"></div>
+          </div>
+          <div class="credits-grid">
+            <div class="credit-card">
+              <div class="credit-label">Студент</div>
+              <div class="credit-value">ФИО ________________</div>
+            </div>
+            <div class="credit-card">
+              <div class="credit-label">Студент</div>
+              <div class="credit-value">ФИО ________________</div>
+            </div>
+            <div class="credit-card">
+              <div class="credit-label">Группа</div>
+              <div class="credit-value">______________</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 2: About the topic
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-circle-info"></i> О теме</div>
+              <h2>Что такое NTFS и почему она важна</h2>
+            </div>
+            <div class="page-chip">01 / 15</div>
+          </div>
+          <div class="two-col">
+            <div class="card card-elevated">
+              <p class="lead">
+                <strong>NTFS (New Technology File System)</strong> — основная файловая
+                система Windows для системных и рабочих разделов. Она хранит не просто
+                цепочки кластеров, а полноценные объекты с метаданными, правами доступа
+                и механизмами восстановления после сбоев.
+              </p>
+              <div class="pill-row">
+                <span class="pill"><i class="fa-solid fa-database"></i> MFT</span>
+                <span class="pill"><i class="fa-solid fa-book"></i> Журнал</span>
+                <span class="pill"><i class="fa-solid fa-lock"></i> ACL</span>
+                <span class="pill"><i class="fa-solid fa-layer-group"></i> Атрибуты</span>
+              </div>
+            </div>
+            <div class="card tinted indigo">
+              <div class="icon-badge"><i class="fa-solid fa-hard-drive"></i></div>
+              <h3>Главная идея</h3>
+              <p class="dim">
+                Почти всё на томе — это файл-объект. Центральная структура —
+                <strong>MFT</strong>, а не таблица размещения. Это даёт надёжность,
+                безопасность и масштабируемость.
+              </p>
+            </div>
+          </div>
+          <div class="three-col">
+            <div class="metric-card card tinted amber">
+              <div class="metric-label">Контекст</div>
+              <div class="metric-value">Стандарт Windows для системных дисков</div>
+            </div>
+            <div class="metric-card card tinted sky">
+              <div class="metric-label">Фокус</div>
+              <div class="metric-value">Организация данных и надёжность</div>
+            </div>
+            <div class="metric-card card tinted rose">
+              <div class="metric-label">Сравнение</div>
+              <div class="metric-value">Чем NTFS принципиально лучше FAT32</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 3: Agenda
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-route"></i> План</div>
+              <h2>Маршрут презентации</h2>
+            </div>
+            <div class="page-chip">02 / 15</div>
+          </div>
+          <div class="four-col">
+            <div class="card">
+              <div class="icon-badge"><i class="fa-solid fa-database"></i></div>
+              <h3>1. Структура</h3>
+              <p class="dim">Кластеры, метаданные, MFT, системные файлы.</p>
+            </div>
+            <div class="card">
+              <div class="icon-badge amber"><i class="fa-solid fa-file-import"></i></div>
+              <h3>2. Операции</h3>
+              <p class="dim">Чтение, запись, удаление и работа с каталогами.</p>
+            </div>
+            <div class="card">
+              <div class="icon-badge emerald"><i class="fa-solid fa-folder-tree"></i></div>
+              <h3>3. Каталоги</h3>
+              <p class="dim">Почему папки в NTFS — это индексы, а не списки.</p>
+            </div>
+            <div class="card">
+              <div class="icon-badge violet"><i class="fa-solid fa-shield-halved"></i></div>
+              <h3>4. Надёжность</h3>
+              <p class="dim">Журналирование, ACL, шифрование, квоты, расширения.</p>
+            </div>
+          </div>
+          <div class="highlight-strip">
+            <i class="fa-solid fa-lightbulb"></i>
+            <div>
+              NTFS удобнее воспринимать как <strong>систему управления объектами</strong>
+              на томе, а не как простую таблицу размещения файлов.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 4: What is NTFS
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-circle-question"></i> Основы</div>
+              <h2>Что представляет собой NTFS</h2>
+            </div>
+            <div class="page-chip">03 / 15</div>
+          </div>
+          <div class="three-col">
+            <div class="card tinted amber">
+              <div class="icon-badge amber"><i class="fa-solid fa-gear"></i></div>
+              <h3>Назначение</h3>
+              <ul>
+                <li>Хранение файлов, каталогов и служебных структур.</li>
+                <li>Быстрый доступ к данным и учёт свободного места.</li>
+                <li>Поддержка больших томов и файлов.</li>
+              </ul>
+            </div>
+            <div class="card tinted rose">
+              <div class="icon-badge rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <h3>Проблемы FAT32</h3>
+              <ul>
+                <li>Нет журналирования и современной модели безопасности.</li>
+                <li>Файл не больше <strong>4 ГБ − 1 байт</strong>.</li>
+                <li>Слабая работа с большими каталогами и дисками.</li>
+              </ul>
+            </div>
+            <div class="card tinted indigo">
+              <div class="icon-badge"><i class="fa-solid fa-bolt"></i></div>
+              <h3>Ключевая идея NTFS</h3>
+              <p class="dim">
+                Почти всё на томе — это <strong>файлы-объекты</strong>, а центральной
+                структурой делается не FAT-таблица, а <strong>MFT</strong>.
+              </p>
+              <div class="pill-row">
+                <span class="pill"><i class="fa-solid fa-lock"></i> ACL</span>
+                <span class="pill"><i class="fa-solid fa-book"></i> Журнал</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 5: Data organization
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-sitemap"></i> Организация данных</div>
+              <h2>Как NTFS организует данные на томе</h2>
+            </div>
+            <div class="page-chip">04 / 15</div>
+          </div>
+          <div class="flow-line four">
+            <div class="step-card">
+              <div class="step-index">1</div>
+              <div class="step-title">Сектор</div>
+              <p class="dim">Физическая единица хранения на носителе.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">2</div>
+              <div class="step-title">Кластер</div>
+              <p class="dim">Минимальный блок дискового пространства для файла.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">3</div>
+              <div class="step-title">MFT</div>
+              <p class="dim">Запись об объекте: имя, атрибуты, права, адреса.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">4</div>
+              <div class="step-title">Файл</div>
+              <p class="dim">Логический объект, который видит ОС и пользователь.</p>
+            </div>
+          </div>
+          <div class="card tinted indigo">
+            <div class="icon-badge"><i class="fa-solid fa-file-code"></i></div>
+            <h3>Почти всё в NTFS — это файл</h3>
+            <div class="bento-grid" style="margin-top:6px;">
+              <div class="mini-card span-3"><strong>$MFT</strong><br><span class="dim">Главная файловая таблица.</span></div>
+              <div class="mini-card span-3"><strong>$LogFile</strong><br><span class="dim">Журнал операций над метаданными.</span></div>
+              <div class="mini-card span-3"><strong>$Bitmap</strong><br><span class="dim">Карта свободных и занятых кластеров.</span></div>
+              <div class="mini-card span-3"><strong>$Boot</strong><br><span class="dim">Загрузочная информация тома.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 6: MFT and storage modes
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-table-list"></i> MFT</div>
+              <h2>Главная файловая таблица и типы хранения</h2>
+            </div>
+            <div class="page-chip">05 / 15</div>
+          </div>
+          <div class="two-col">
+            <div class="card">
+              <div class="icon-badge"><i class="fa-solid fa-id-card"></i></div>
+              <h3>Что хранит запись MFT</h3>
+              <div class="bento-grid" style="margin-top:8px;">
+                <div class="mini-card span-6"><strong>$FILE_NAME</strong><br><span class="dim">Имя файла и ссылка из каталога.</span></div>
+                <div class="mini-card span-6"><strong>$STANDARD_INFORMATION</strong><br><span class="dim">Времена, флаги, свойства.</span></div>
+                <div class="mini-card span-6"><strong>$DATA</strong><br><span class="dim">Содержимое или карта размещения.</span></div>
+                <div class="mini-card span-6"><strong>$SECURITY_DESCRIPTOR</strong><br><span class="dim">Права и сведения о владельце.</span></div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div class="card tinted emerald">
+                <div class="icon-badge emerald"><i class="fa-solid fa-box-open"></i></div>
+                <h3>Резидентные данные</h3>
+                <p class="dim">
+                  Маленький файл может храниться <strong>прямо внутри записи MFT</strong>.
+                  Это сокращает обращения к диску и ускоряет доступ.
+                </p>
+              </div>
+              <div class="card tinted sky">
+                <div class="icon-badge sky"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></div>
+                <h3>Нерезидентные данные</h3>
+                <p class="dim">
+                  Большой файл хранится в кластерах тома, а MFT содержит описание,
+                  где именно лежат его участки.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="highlight-strip">
+            <i class="fa-solid fa-circle-check"></i>
+            <div>
+              <strong>Итог:</strong> в NTFS запись о файле и сами данные могут быть либо
+              вместе, либо разнесены по разным областям тома.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 7: Read operation
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-file-import"></i> Чтение</div>
+              <h2>Как происходит чтение файла</h2>
+            </div>
+            <div class="page-chip">06 / 15</div>
+          </div>
+          <div class="flow-line">
+            <div class="step-card">
+              <div class="step-index">1</div>
+              <div class="step-title">Путь</div>
+              <p class="dim">ОС получает путь, например <code>C:\Docs\report.txt</code>.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">2</div>
+              <div class="step-title">Каталог</div>
+              <p class="dim">Имя ищется в индексах каталогов.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">3</div>
+              <div class="step-title">MFT</div>
+              <p class="dim">Получаем запись объекта и его атрибуты.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">4</div>
+              <div class="step-title">Блоки данных</div>
+              <p class="dim">MFT сообщает, где находятся участки файла.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">5</div>
+              <div class="step-title">Кэш / диск</div>
+              <p class="dim">Данные читаются из системного кэша или с носителя.</p>
+            </div>
+          </div>
+          <div class="compare-note">
+            <div class="mini-card">
+              <h3><i class="fa-solid fa-magnifying-glass"></i> Логический этап</h3>
+              <p class="dim">Поиск объекта по имени и пути.</p>
+            </div>
+            <div class="mini-card">
+              <h3><i class="fa-solid fa-hard-drive"></i> Физический этап</h3>
+              <p class="dim">Чтение содержимого по адресам из MFT.</p>
+            </div>
+            <div class="mini-card">
+              <h3><i class="fa-solid fa-memory"></i> Эффект</h3>
+              <p class="dim">Повторные обращения ускоряются за счёт кэша.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 8: Write operation
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-file-export"></i> Запись</div>
+              <h2>Как происходит запись файла</h2>
+            </div>
+            <div class="page-chip">07 / 15</div>
+          </div>
+          <div class="timeline">
+            <div class="timeline-track">
+              <div class="timeline-node">
+                <h3>1. Создание</h3>
+                <p class="dim">Выделяется запись в MFT и создаются атрибуты файла.</p>
+              </div>
+              <div class="timeline-node">
+                <h3>2. Размещение</h3>
+                <p class="dim">Файлу выдаются кластеры, а <strong>$Bitmap</strong> отмечает их как занятые.</p>
+              </div>
+              <div class="timeline-node">
+                <h3>3. Обновление каталога</h3>
+                <p class="dim">Имя файла добавляется в индекс соответствующей папки.</p>
+              </div>
+            </div>
+            <div class="card tinted rose">
+              <div class="icon-badge rose"><i class="fa-solid fa-book-open"></i></div>
+              <h3>Журналирование</h3>
+              <p class="dim">
+                Перед важными изменениями метаданных NTFS фиксирует операцию в
+                <strong>$LogFile</strong>. Это помогает восстановить согласованное
+                состояние после сбоя.
+              </p>
+              <p class="dim" style="margin-top:8px;">
+                Важно: журналируются прежде всего <strong>метаданные</strong>, а не
+                обязательно последние пользовательские байты файла.
+              </p>
+            </div>
+          </div>
+          <div class="footer-tag"><i class="fa-solid fa-pen-ruler"></i> Если файл растёт, NTFS может перевести его из резидентного режима в нерезидентный.</div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 9: Delete operation
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-trash-can"></i> Удаление</div>
+              <h2>Что происходит при удалении файла</h2>
+            </div>
+            <div class="page-chip">08 / 15</div>
+          </div>
+          <div class="flow-line four">
+            <div class="step-card">
+              <div class="step-index">1</div>
+              <div class="step-title">Удаление имени</div>
+              <p class="dim">Запись файла исчезает из каталога.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">2</div>
+              <div class="step-title">Освобождение MFT</div>
+              <p class="dim">Запись помечается как доступная для повторного использования.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">3</div>
+              <div class="step-title">Освобождение кластеров</div>
+              <p class="dim">В <strong>$Bitmap</strong> место помечается как свободное.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">4</div>
+              <div class="step-title">Данные остаются</div>
+              <p class="dim">Пока кластеры не перезаписаны, часть данных можно восстановить.</p>
+            </div>
+          </div>
+          <div class="highlight-strip">
+            <i class="fa-solid fa-rotate-left"></i>
+            <div>
+              <strong>Вывод:</strong> обычное удаление в NTFS — это прежде всего логическое
+              снятие ссылок и освобождение ресурсов, а не мгновенное физическое стирание.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 10: Directories
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-folder-tree"></i> Каталоги</div>
+              <h2>Как NTFS работает с каталогами</h2>
+            </div>
+            <div class="page-chip">09 / 15</div>
+          </div>
+          <div class="catalog-visual">
+            <div class="tree-box">
+              <span class="tree-line"><strong>C:\</strong></span>
+              <span class="tree-line">├── <strong>Docs</strong> <span class="arrow">→ индекс каталога</span></span>
+              <span class="tree-line">│   ├── report.txt <span class="arrow">→ MFT-запись</span></span>
+              <span class="tree-line">│   ├── lecture.pdf <span class="arrow">→ MFT-запись</span></span>
+              <span class="tree-line">│   └── notes.docx <span class="arrow">→ MFT-запись</span></span>
+              <span class="tree-line">└── <strong>Labs</strong> <span class="arrow">→ индекс каталога</span></span>
+              <span class="tree-line">&nbsp;&nbsp;&nbsp;&nbsp;├── lab1.c</span>
+              <span class="tree-line">&nbsp;&nbsp;&nbsp;&nbsp;└── lab2.c</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div class="card tinted amber">
+                <div class="icon-badge amber"><i class="fa-solid fa-folder-open"></i></div>
+                <h3>Каталог — это файл</h3>
+                <p class="dim">Хранит не простой список имён, а структурированный индекс.</p>
+              </div>
+              <div class="card tinted sky">
+                <div class="icon-badge sky"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                <h3>Поиск быстрее</h3>
+                <p class="dim">Большие папки работают лучше, чем при линейном переборе.</p>
+              </div>
+              <div class="card tinted emerald">
+                <div class="icon-badge emerald"><i class="fa-solid fa-arrows-rotate"></i></div>
+                <h3>Индекс всегда обновляется</h3>
+                <p class="dim">Создание, переименование и удаление требуют его обновления.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 11: NTFS vs FAT32
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-right-left"></i> Сравнение</div>
+              <h2>NTFS и FAT32: ключевые различия</h2>
+            </div>
+            <div class="page-chip">10 / 15</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Критерий</th>
+                <th>FAT32</th>
+                <th>NTFS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Базовая структура</td>
+                <td>Таблица размещения файлов</td>
+                <td>MFT и набор системных файлов</td>
+              </tr>
+              <tr>
+                <td>Максимальный размер файла</td>
+                <td>4 ГБ − 1 байт</td>
+                <td>Значительно выше</td>
+              </tr>
+              <tr>
+                <td>Журналирование</td>
+                <td>Нет</td>
+                <td>Есть, для метаданных</td>
+              </tr>
+              <tr>
+                <td>Права доступа</td>
+                <td>Практически отсутствуют</td>
+                <td>Полноценные ACL</td>
+              </tr>
+              <tr>
+                <td>Каталоги</td>
+                <td>Менее эффективны на больших объёмах</td>
+                <td>Индексированные структуры</td>
+              </tr>
+              <tr>
+                <td>Совместимость</td>
+                <td>Очень высокая</td>
+                <td>Лучшая в среде Windows</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="compare-note two">
+            <div class="mini-card tinted rose">
+              <h3><i class="fa-solid fa-plug-circle-xmark"></i> Сильная сторона FAT32</h3>
+              <p class="dim">Простота и совместимость с большим числом устройств.</p>
+            </div>
+            <div class="mini-card tinted emerald">
+              <h3><i class="fa-solid fa-shield"></i> Сильная сторона NTFS</h3>
+              <p class="dim">Надёжность, безопасность и работа с большими объёмами данных.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 12: Internal architecture
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-server"></i> Архитектура</div>
+              <h2>Системные файлы тома NTFS</h2>
+            </div>
+            <div class="page-chip">11 / 15</div>
+          </div>
+          <div class="systems-grid">
+            <div class="card system-file">
+              <h3>$MFT</h3>
+              <p class="dim">Центральная таблица всех объектов тома.</p>
+            </div>
+            <div class="card system-file">
+              <h3>$MFTMirr</h3>
+              <p class="dim">Зеркало части MFT для устойчивости.</p>
+            </div>
+            <div class="card system-file">
+              <h3>$LogFile</h3>
+              <p class="dim">Журнал операций над метаданными.</p>
+            </div>
+            <div class="card system-file">
+              <h3>$Bitmap</h3>
+              <p class="dim">Карта свободных и занятых кластеров.</p>
+            </div>
+            <div class="card system-file">
+              <h3>$Boot</h3>
+              <p class="dim">Загрузочная информация тома.</p>
+            </div>
+            <div class="card system-file">
+              <h3>$Secure</h3>
+              <p class="dim">Дескрипторы безопасности и ACL.</p>
+            </div>
+            <div class="card system-file">
+              <h3>$BadClus</h3>
+              <p class="dim">Сведения о плохих кластерах.</p>
+            </div>
+            <div class="card system-file">
+              <h3>$UpCase</h3>
+              <p class="dim">Таблица для корректного сравнения имён.</p>
+            </div>
+          </div>
+          <div class="highlight-strip">
+            <i class="fa-solid fa-layer-group"></i>
+            <div>
+              <strong>Важно:</strong> большие файлы описываются диапазонами размещения.
+              Это удобно, но при сильной фрагментации производительность на HDD может снижаться.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 13: Reliability and security
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-shield-halved"></i> Надёжность</div>
+              <h2>Почему NTFS подходит для рабочих и системных дисков</h2>
+            </div>
+            <div class="page-chip">12 / 15</div>
+          </div>
+          <div class="four-col">
+            <div class="card tinted rose">
+              <div class="icon-badge rose"><i class="fa-solid fa-book"></i></div>
+              <h3>Журналирование</h3>
+              <p class="dim">После сбоя том легче вернуть в согласованное состояние.</p>
+            </div>
+            <div class="card tinted amber">
+              <div class="icon-badge amber"><i class="fa-solid fa-user-lock"></i></div>
+              <h3>ACL</h3>
+              <p class="dim">Права на чтение, запись, удаление и выполнение.</p>
+            </div>
+            <div class="card tinted sky">
+              <div class="icon-badge sky"><i class="fa-solid fa-lock"></i></div>
+              <h3>EFS</h3>
+              <p class="dim">Шифрование на уровне файловой системы.</p>
+            </div>
+            <div class="card tinted emerald">
+              <div class="icon-badge emerald"><i class="fa-solid fa-chart-pie"></i></div>
+              <h3>Квоты</h3>
+              <p class="dim">Ограничение дискового пространства для пользователя.</p>
+            </div>
+          </div>
+          <div class="compare-note two">
+            <div class="mini-card">
+              <h3><i class="fa-solid fa-circle-check"></i> Практический эффект</h3>
+              <p class="dim">NTFS лучше подходит для многопользовательской и административной среды.</p>
+            </div>
+            <div class="mini-card">
+              <h3><i class="fa-solid fa-circle-exclamation"></i> Важная оговорка</h3>
+              <p class="dim">Журнал не гарантирует сохранность последних пользовательских данных при отключении питания.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 14: Extra capabilities
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> Возможности</div>
+              <h2>Дополнительные возможности NTFS</h2>
+            </div>
+            <div class="page-chip">13 / 15</div>
+          </div>
+          <div class="four-col">
+            <div class="card tinted amber">
+              <div class="icon-badge amber"><i class="fa-solid fa-stream"></i></div>
+              <h3>Alternate Data Streams</h3>
+              <p class="dim">Один файл может содержать несколько потоков данных, включая скрытые служебные.</p>
+            </div>
+            <div class="card tinted sky">
+              <div class="icon-badge sky"><i class="fa-solid fa-link"></i></div>
+              <h3>Жёсткие ссылки</h3>
+              <p class="dim">Несколько имён в каталогах могут ссылаться на один объект.</p>
+            </div>
+            <div class="card tinted rose">
+              <div class="icon-badge rose"><i class="fa-solid fa-code-branch"></i></div>
+              <h3>Reparse Points</h3>
+              <p class="dim">Основа для символических ссылок и точек подключения.</p>
+            </div>
+            <div class="card tinted emerald">
+              <div class="icon-badge emerald"><i class="fa-solid fa-clock-rotate-left"></i></div>
+              <h3>USN Journal</h3>
+              <p class="dim">Журнал изменений для индексаторов и антивирусов.</p>
+            </div>
+          </div>
+          <div class="footer-tag"><i class="fa-solid fa-gears"></i> NTFS — не только хранение данных, но и инфраструктура для сервисов ОС.</div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 15: Pros and cons
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-scale-balanced"></i> Оценка</div>
+              <h2>Преимущества и ограничения NTFS</h2>
+            </div>
+            <div class="page-chip">14 / 15</div>
+          </div>
+          <div class="two-col">
+            <div class="card tinted emerald">
+              <div class="icon-badge emerald"><i class="fa-solid fa-thumbs-up"></i></div>
+              <h3>Преимущества</h3>
+              <ul>
+                <li>Журналирование и более высокая надёжность.</li>
+                <li>Большие файлы и тома без ограничений FAT32.</li>
+                <li>ACL, EFS, квоты и расширенные метаданные.</li>
+                <li>Эффективные каталоги и развитая архитектура.</li>
+              </ul>
+            </div>
+            <div class="card tinted rose">
+              <div class="icon-badge rose"><i class="fa-solid fa-thumbs-down"></i></div>
+              <h3>Ограничения</h3>
+              <ul>
+                <li>Сложнее по внутреннему устройству и ручному анализу.</li>
+                <li>Меньше универсальной совместимости, чем у FAT32 / exFAT.</li>
+                <li>Накладные расходы на метаданные и служебные структуры.</li>
+                <li>Некоторые функции усложняют администрирование и аудит.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="highlight-strip">
+            <i class="fa-solid fa-circle-nodes"></i>
+            <div>
+              <strong>Баланс:</strong> NTFS сложнее FAT32, но эта сложность даёт надёжность,
+              масштабируемость и полноценную интеграцию с Windows.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 16: Conclusion
+           ===================================================== -->
+      <section>
+        <div class="slide-shell">
+          <div class="slide-top">
+            <div>
+              <div class="kicker"><i class="fa-solid fa-flag-checkered"></i> Итог</div>
+              <h2>Главный вывод по NTFS</h2>
+            </div>
+            <div class="page-chip">15 / 15</div>
+          </div>
+          <div class="final-note">
+            <div class="card tinted indigo">
+              <div class="tiny">Краткая формула темы</div>
+              <div class="big-quote">
+                NTFS — это не просто способ хранить файлы, а зрелая файловая система,
+                в которой данные, метаданные, безопасность и восстановление после сбоев
+                объединены в одну архитектуру.
+              </div>
+            </div>
+            <div class="card">
+              <h3>Что важно запомнить</h3>
+              <ul>
+                <li>Центр системы — <strong>MFT</strong>, а не таблица кластеров.</li>
+                <li>Чтение, запись и удаление идут через обновление метаданных и каталогов.</li>
+                <li>Каталоги — это индексированные структуры.</li>
+                <li>Журналирование повышает надёжность работы тома.</li>
+                <li>По сравнению с FAT32 NTFS сложнее, но значительно функциональнее.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           Slide 17: Thank you
+           ===================================================== -->
+      <section>
+        <div class="thanks-slide">
+          <div class="thanks-mark"><i class="fa-solid fa-check"></i></div>
+          <h1 class="thanks-title">Спасибо за внимание</h1>
+          <div class="thanks-divider"></div>
+          <p class="thanks-sub">Готовы ответить на ваши вопросы</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Reveal.js initialization -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      slideNumber: false,
+      center: false,
+      transition: "slide",
+      width: 1400,
+      height: 900,
+      margin: 0.04
+    });
+  </script>
+</body>
+</html>
